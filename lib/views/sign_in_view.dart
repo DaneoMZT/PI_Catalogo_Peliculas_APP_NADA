@@ -1,53 +1,99 @@
-import 'welcome_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'home_view.dart';
-import 'sign_in_view.dart';
+import 'login_view.dart';
 
-class LoginView extends StatefulWidget {
-  const LoginView({super.key});
+class RegisterView extends StatefulWidget {
+  const RegisterView({super.key});
 
   @override
-  State<LoginView> createState() => _LoginViewState();
+  State<RegisterView> createState() => _RegisterViewState();
 }
 
-class _LoginViewState extends State<LoginView> {
+class _RegisterViewState extends State<RegisterView> {
   bool obscure = true;
+  bool loading = false;
 
+  final TextEditingController aliasController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> login() async {
+  /// 🔥 REGISTRO FIREBASE
+  Future<void> registerUser() async {
+    String alias = aliasController.text.trim().toLowerCase();
     String email = emailController.text.trim().toLowerCase();
     String password = passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (alias.isEmpty || email.isEmpty || password.isEmpty) {
       _popup("ERROR", "Completa todos los campos.");
       return;
     }
 
-    try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+    setState(() {
+      loading = true;
+    });
 
-      _popup("BIENVENIDO", "Inicio de sesión exitoso.", success: true);
+    try {
+      final aliasQuery = await _firestore
+          .collection('users')
+          .where('alias', isEqualTo: alias)
+          .limit(1)
+          .get();
+
+      if (aliasQuery.docs.isNotEmpty) {
+        setState(() {
+          loading = false;
+        });
+
+        _popup("ALIAS NO DISPONIBLE", "Ese alias ya existe.");
+        return;
+      }
+
+      UserCredential credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      String uid = credential.user!.uid;
+
+      await _firestore.collection('users').doc(uid).set({
+        "uid": uid,
+        "alias": alias,
+        "email": email,
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        loading = false;
+      });
+
+      _popup("CUENTA CREADA", "Bienvenido @$alias", success: true);
     } on FirebaseAuthException catch (e) {
+      setState(() {
+        loading = false;
+      });
+
       String message = "Error de autenticación.";
 
-      if (e.code == 'user-not-found') {
-        message = "Usuario no encontrado.";
-      } else if (e.code == 'wrong-password') {
-        message = "Contraseña incorrecta.";
+      if (e.code == 'email-already-in-use') {
+        message = "El correo ya está registrado.";
+      } else if (e.code == 'weak-password') {
+        message = "La contraseña es demasiado débil.";
       } else if (e.code == 'invalid-email') {
         message = "Correo inválido.";
-      } else if (e.code == 'invalid-credential') {
-        message = "Credenciales inválidas.";
       }
 
       _popup("ERROR", message);
     } catch (e) {
+      setState(() {
+        loading = false;
+      });
+
       _popup("ERROR", "Ocurrió un error inesperado.");
     }
   }
@@ -68,7 +114,7 @@ class _LoginViewState extends State<LoginView> {
               if (success) {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const WelcomeView()),
+                  MaterialPageRoute(builder: (_) => const HomeView()),
                 );
               }
             },
@@ -108,7 +154,7 @@ class _LoginViewState extends State<LoginView> {
                     child: Row(
                       children: [
                         const Text(
-                          "◀ App Store",
+                          "◀ Inicio",
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                         const Spacer(),
@@ -156,7 +202,7 @@ class _LoginViewState extends State<LoginView> {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      "“En NADA lo tienes TODO. Inicia sesión para continuar.”",
+                      "“En NADA lo tienes TODO. Regístrate y comienza a ver sin límites.”",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
@@ -165,14 +211,16 @@ class _LoginViewState extends State<LoginView> {
                   const SizedBox(height: 30),
 
                   const Text(
-                    "INICIAR SESIÓN / SIGN IN",
+                    "CREAR CUENTA",
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  _inputField("ALIAS", controller: aliasController),
+
+                  const SizedBox(height: 15),
 
                   _inputField("E-MAIL", controller: emailController),
 
@@ -220,7 +268,7 @@ class _LoginViewState extends State<LoginView> {
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: login,
+                        onPressed: loading ? null : registerUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black,
@@ -229,34 +277,46 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           padding: const EdgeInsets.all(16),
                         ),
-                        child: const Text(
-                          "INICIAR SESIÓN",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        child: loading
+                            ? const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              )
+                            : const Text(
+                                "CREAR CUENTA",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 20),
 
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterView()),
-                      );
-                    },
-                    child: const Text(
-                      "¿No tienes cuenta? Regístrate",
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  const Text(
-                    "¿OLVIDASTE EL PASSWORD? / FORGOT PASSWORD?",
-                    style: TextStyle(color: Colors.blue, fontSize: 11),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "¿Ya tienes cuenta?",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginView(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "INICIAR SESIÓN",
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const Spacer(),
