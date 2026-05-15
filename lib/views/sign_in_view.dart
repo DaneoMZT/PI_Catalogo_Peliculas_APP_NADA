@@ -16,68 +16,51 @@ class _RegisterViewState extends State<RegisterView> {
   bool obscure = true;
   bool loading = false;
 
-  final TextEditingController aliasController = TextEditingController();
+  ///final TextEditingController aliasController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// 🔥 REGISTRO FIREBASE
   Future<void> registerUser() async {
-    String alias = aliasController.text.trim().toLowerCase();
     String email = emailController.text.trim().toLowerCase();
     String password = passwordController.text.trim();
 
-    if (alias.isEmpty || email.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       _popup("ERROR", "Completa todos los campos.");
       return;
     }
 
-    setState(() {
-      loading = true;
-    });
+    setState(() => loading = true);
+    _loadingPopup();
 
     try {
-      final aliasQuery = await _firestore
-          .collection('users')
-          .where('alias', isEqualTo: alias)
-          .limit(1)
-          .get();
-
-      if (aliasQuery.docs.isNotEmpty) {
-        setState(() {
-          loading = false;
-        });
-
-        _popup("ALIAS NO DISPONIBLE", "Ese alias ya existe.");
-        return;
-      }
-
       UserCredential credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      if (!mounted) return;
+
       String uid = credential.user!.uid;
 
-      await _firestore.collection('users').doc(uid).set({
+      _firestore.collection('users').doc(uid).set({
         "uid": uid,
-        "alias": alias,
         "email": email,
         "createdAt": FieldValue.serverTimestamp(),
       });
 
-      setState(() {
-        loading = false;
-      });
+      if (!mounted) return;
 
-      _popup("CUENTA CREADA", "Bienvenido @$alias", success: true);
+      Navigator.pop(context);
+      setState(() => loading = false);
+      _popup("CUENTA CREADA", "Bienvenido", success: true);
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        loading = false;
-      });
+      if (!mounted) return;
 
+      Navigator.pop(context);
+      setState(() => loading = false);
       String message = "Error de autenticación.";
 
       if (e.code == 'email-already-in-use') {
@@ -90,12 +73,32 @@ class _RegisterViewState extends State<RegisterView> {
 
       _popup("ERROR", message);
     } catch (e) {
-      setState(() {
-        loading = false;
-      });
+      if (!mounted) return;
 
+      Navigator.pop(context);
+      setState(() => loading = false);
       _popup("ERROR", "Ocurrió un error inesperado.");
     }
+  }
+
+  void _loadingPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        backgroundColor: Colors.black87,
+        content: Row(
+          children: [
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(width: 20),
+            Text(
+              "Registrando usuario...",
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _popup(String title, String msg, {bool success = false}) {
@@ -148,7 +151,6 @@ class _RegisterViewState extends State<RegisterView> {
               borderRadius: BorderRadius.circular(40),
               child: Column(
                 children: [
-                  /// HEADER
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
@@ -217,8 +219,6 @@ class _RegisterViewState extends State<RegisterView> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  _inputField("ALIAS", controller: aliasController),
 
                   const SizedBox(height: 15),
 
