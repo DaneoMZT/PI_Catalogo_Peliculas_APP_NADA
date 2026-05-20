@@ -15,7 +15,6 @@ class MovieDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
-            /// IMAGEN
             Stack(
               children: [
                 SizedBox(
@@ -80,14 +79,8 @@ class MovieDetailView extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 15),
-
-                  /// AÑO
                   infoItem("Año", movie['year'].toString()),
-
-                  /// DIRECTOR
                   infoItem("Director", movie['director']),
-
-                  /// GÉNERO
                   infoItem("Género", movie['genre']),
 
                   const SizedBox(height: 25),

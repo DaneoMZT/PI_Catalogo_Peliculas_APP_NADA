@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'catalog_view.dart';
 
 class WelcomeView extends StatefulWidget {
@@ -121,7 +120,6 @@ class _WelcomeViewState extends State<WelcomeView> {
           mainAxisSize: MainAxisSize.min,
 
           children: [
-            /// INPUT
             TextField(
               controller: controller,
 
@@ -334,7 +332,6 @@ class _WelcomeViewState extends State<WelcomeView> {
 
                       const SizedBox(height: 40),
 
-                      /// WELCOME
                       const Text(
                         "WELCOME",
 

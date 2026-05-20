@@ -1,7 +1,6 @@
 import 'welcome_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'home_view.dart';
 import 'sign_in_view.dart';
 

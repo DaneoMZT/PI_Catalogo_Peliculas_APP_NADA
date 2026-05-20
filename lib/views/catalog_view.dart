@@ -2,7 +2,6 @@ import 'movie_detail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'home_view.dart';
 import 'welcome_view.dart';
 
@@ -45,7 +44,6 @@ class _CatalogViewState extends State<CatalogView> {
 
             final allMovies = snapshot.data!.docs;
 
-            /// FILTRO BUSQUEDA
             final movies = allMovies.where((movie) {
               final title = movie['title'].toString().toLowerCase();
 
@@ -71,7 +69,6 @@ class _CatalogViewState extends State<CatalogView> {
 
             return CustomScrollView(
               slivers: [
-                /// APP BAR
                 SliverAppBar(
                   backgroundColor: Colors.black,
                   pinned: true,
@@ -79,7 +76,6 @@ class _CatalogViewState extends State<CatalogView> {
 
                   title: Row(
                     children: [
-                      /// LOGO
                       ColorFiltered(
                         colorFilter: const ColorFilter.mode(
                           Colors.white,
@@ -96,7 +92,6 @@ class _CatalogViewState extends State<CatalogView> {
 
                       const Spacer(),
 
-                      /// BUSCAR
                       IconButton(
                         onPressed: () {
                           showSearch(
@@ -108,7 +103,6 @@ class _CatalogViewState extends State<CatalogView> {
                         icon: const Icon(Icons.search, color: Colors.white),
                       ),
 
-                      /// PERFIL
                       PopupMenuButton<String>(
                         color: Colors.grey[900],
 
@@ -191,13 +185,11 @@ class _CatalogViewState extends State<CatalogView> {
                   ),
                 ),
 
-                /// CONTENIDO
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
 
                     children: [
-                      /// BANNER
                       Stack(
                         children: [
                           SizedBox(
@@ -475,7 +467,6 @@ class _CatalogViewState extends State<CatalogView> {
   }
 }
 
-/// SEARCH DELEGATE
 class MovieSearchDelegate extends SearchDelegate {
   final List<QueryDocumentSnapshot> allMovies;
 

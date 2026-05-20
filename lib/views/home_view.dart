@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-//import 'catalog_view.dart';
-//import 'upload_movies.dart';
-
 import '../widgets/custom_button.dart';
 import 'login_view.dart';
 import 'sign_in_view.dart';
@@ -27,7 +24,6 @@ class HomeView extends StatelessWidget {
           child: SafeArea(
             child: Column(
               children: [
-                /// HEADER
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
 
@@ -77,7 +73,6 @@ class HomeView extends StatelessWidget {
 
                 const Spacer(),
 
-                /// TEXTO
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 40),
 
@@ -92,7 +87,6 @@ class HomeView extends StatelessWidget {
 
                 const Spacer(),
 
-                /// BOTÓN LOGIN
                 CustomButton(
                   text: "INICIAR SESIÓN",
 
