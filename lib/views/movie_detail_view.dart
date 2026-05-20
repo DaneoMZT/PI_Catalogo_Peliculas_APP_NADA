@@ -9,30 +9,28 @@ class MovieDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-
           children: [
+            // =======================
+            // PORTADA
+            // =======================
             Stack(
               children: [
                 SizedBox(
                   width: double.infinity,
                   height: 500,
-
-                  child: Image.network(movie['image'], fit: BoxFit.cover),
+                  child: Image.network(movie['image'] ?? '', fit: BoxFit.cover),
                 ),
 
                 Container(
                   width: double.infinity,
                   height: 500,
-
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-
                       colors: [
                         Colors.transparent,
                         Colors.black.withValues(alpha: 0.95),
@@ -44,33 +42,27 @@ class MovieDetailView extends StatelessWidget {
                 Positioned(
                   top: 50,
                   left: 15,
-
                   child: CircleAvatar(
                     backgroundColor: Colors.black54,
-
                     child: IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ),
               ],
             ),
 
+            // =======================
+            // INFO
+            // =======================
             Padding(
               padding: const EdgeInsets.all(20),
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
-                  /// TITULO
                   Text(
-                    movie['title'],
-
+                    movie['title'] ?? 'Sin título',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 32,
@@ -79,7 +71,8 @@ class MovieDetailView extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 15),
-                  infoItem("Año", movie['year'].toString()),
+
+                  infoItem("Año", movie['year']),
                   infoItem("Director", movie['director']),
                   infoItem("Género", movie['genre']),
 
@@ -87,7 +80,6 @@ class MovieDetailView extends StatelessWidget {
 
                   const Text(
                     "Sinopsis",
-
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -98,8 +90,7 @@ class MovieDetailView extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Text(
-                    movie['synopsis'],
-
+                    movie['synopsis'] ?? 'Sin sinopsis disponible',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -111,18 +102,14 @@ class MovieDetailView extends StatelessWidget {
 
                   SizedBox(
                     width: double.infinity,
-
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16),
                       ),
-
                       onPressed: () {},
-
                       icon: const Icon(Icons.play_arrow),
-
                       label: const Text(
                         "VER AHORA",
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -138,28 +125,23 @@ class MovieDetailView extends StatelessWidget {
     );
   }
 
-  Widget infoItem(String title, String value) {
+  Widget infoItem(String title, dynamic value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           Text(
             "$title: ",
-
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
           ),
-
           Expanded(
             child: Text(
-              value,
-
+              value?.toString() ?? "N/A",
               style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
           ),

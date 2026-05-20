@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'home_view.dart';
 import 'catalog_view.dart';
 
 class WelcomeView extends StatefulWidget {
@@ -20,11 +21,8 @@ class _WelcomeViewState extends State<WelcomeView> {
 
   List<Map<String, dynamic>> profiles = [
     {"name": "Daniel", "image": "assets/images/profile1.jpg"},
-
     {"name": "Kids", "image": "assets/images/profile2.jpg"},
-
     {"name": "Invitado", "image": "assets/images/profile3.jpg"},
-
     {"name": "Anime", "image": "assets/images/profile4.jpg"},
   ];
 
@@ -34,31 +32,18 @@ class _WelcomeViewState extends State<WelcomeView> {
     loadUserData();
   }
 
-  String fixImagePath(String path) {
-    return path.replaceAll("assets/assets/", "assets/");
-  }
-
-  Future<void> saveProfiles() async {
-    try {
-      final user = _auth.currentUser;
-
-      if (user == null) return;
-
-      await _firestore.collection('users').doc(user.uid).set({
-        'email': user.email,
-        'profiles': profiles,
-      }, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint("Error guardando perfiles: $e");
-    }
-  }
-
+  /// =========================
+  /// CARGAR USUARIO
+  /// =========================
   Future<void> loadUserData() async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      setState(() => isLoading = false);
+      return;
+    }
+
     try {
-      final user = _auth.currentUser;
-
-      if (user == null) return;
-
       final doc = await _firestore.collection('users').doc(user.uid).get();
 
       if (doc.exists) {
@@ -80,15 +65,33 @@ class _WelcomeViewState extends State<WelcomeView> {
         });
       }
     } catch (e) {
-      final user = _auth.currentUser;
-
       setState(() {
-        userText = user?.email ?? "Usuario";
+        userText = user.email ?? "Usuario";
         isLoading = false;
       });
     }
   }
 
+  /// =========================
+  /// GUARDAR PERFILES
+  /// =========================
+  Future<void> saveProfiles() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        'email': user.email,
+        'profiles': profiles,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint("Error guardando perfiles: $e");
+    }
+  }
+
+  /// =========================
+  /// LOGOUT
+  /// =========================
   Future<void> logout() async {
     await _auth.signOut();
 
@@ -101,16 +104,16 @@ class _WelcomeViewState extends State<WelcomeView> {
     );
   }
 
+  /// =========================
+  /// EDITAR PERFIL
+  /// =========================
   void editProfile(int index) {
-    final TextEditingController controller = TextEditingController(
-      text: profiles[index]["name"],
-    );
+    final controller = TextEditingController(text: profiles[index]["name"]);
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.grey[900],
-
         title: const Text(
           "Editar Perfil",
           style: TextStyle(color: Colors.white),
@@ -118,22 +121,16 @@ class _WelcomeViewState extends State<WelcomeView> {
 
         content: Column(
           mainAxisSize: MainAxisSize.min,
-
           children: [
             TextField(
               controller: controller,
-
               style: const TextStyle(color: Colors.white),
-
               decoration: InputDecoration(
                 hintText: "Nuevo nombre",
-
                 hintStyle: const TextStyle(color: Colors.white54),
-
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey.shade700),
                 ),
-
                 focusedBorder: const OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white),
                 ),
@@ -152,14 +149,10 @@ class _WelcomeViewState extends State<WelcomeView> {
             Wrap(
               spacing: 10,
               runSpacing: 10,
-
               children: [
                 selectImage(index, "assets/images/profile1.jpg"),
-
                 selectImage(index, "assets/images/profile2.jpg"),
-
                 selectImage(index, "assets/images/profile3.jpg"),
-
                 selectImage(index, "assets/images/profile4.jpg"),
               ],
             ),
@@ -168,10 +161,7 @@ class _WelcomeViewState extends State<WelcomeView> {
 
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-
+            onPressed: () => Navigator.pop(context),
             child: const Text("Cancelar"),
           ),
 
@@ -188,8 +178,11 @@ class _WelcomeViewState extends State<WelcomeView> {
               if (!mounted) return;
 
               Navigator.pop(context);
-            },
 
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Perfil actualizado")),
+              );
+            },
             child: const Text("Guardar"),
           ),
         ],
@@ -197,25 +190,22 @@ class _WelcomeViewState extends State<WelcomeView> {
     );
   }
 
+  /// =========================
+  /// SELECCIONAR IMAGEN
+  /// =========================
   Widget selectImage(int index, String imagePath) {
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         setState(() {
           profiles[index]["image"] = imagePath;
         });
-
-        await saveProfiles();
       },
-
       child: Container(
         width: 60,
         height: 60,
-
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-
           border: Border.all(color: Colors.white24),
-
           image: DecorationImage(
             image: AssetImage(imagePath),
             fit: BoxFit.cover,
@@ -225,6 +215,9 @@ class _WelcomeViewState extends State<WelcomeView> {
     );
   }
 
+  /// =========================
+  /// CARD PERFIL
+  /// =========================
   Widget profileCard(int index) {
     return GestureDetector(
       onTap: () {
@@ -235,22 +228,17 @@ class _WelcomeViewState extends State<WelcomeView> {
           ),
         );
       },
-      onLongPress: () {
-        editProfile(index);
-      },
+      onLongPress: () => editProfile(index),
 
       child: Column(
         children: [
           Container(
             width: 100,
             height: 100,
-
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-
               image: DecorationImage(
-                image: AssetImage(fixImagePath(profiles[index]["image"])),
-
+                image: AssetImage(profiles[index]["image"]),
                 fit: BoxFit.cover,
               ),
             ),
@@ -260,7 +248,6 @@ class _WelcomeViewState extends State<WelcomeView> {
 
           Text(
             profiles[index]["name"],
-
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -271,6 +258,9 @@ class _WelcomeViewState extends State<WelcomeView> {
     );
   }
 
+  /// =========================
+  /// UI
+  /// =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -281,65 +271,29 @@ class _WelcomeViewState extends State<WelcomeView> {
           child: Container(
             width: 390,
             height: 844,
-
             decoration: BoxDecoration(
               color: Colors.black,
-
               borderRadius: BorderRadius.circular(40),
-
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.7),
-
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
             ),
 
             child: isLoading
                 ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-
-                      children: [
-                        CircularProgressIndicator(color: Colors.white),
-
-                        SizedBox(height: 20),
-
-                        Text(
-                          "Cargando perfiles...",
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
-                      ],
-                    ),
+                    child: CircularProgressIndicator(color: Colors.white),
                   )
                 : Column(
                     children: [
                       const SizedBox(height: 40),
 
-                      ColorFiltered(
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.difference,
-                        ),
-
-                        child: Image.asset(
-                          'assets/images/logo_nada.jpg',
-                          width: 140,
-                        ),
-                      ),
+                      Image.asset('assets/images/logo_nada.jpg', width: 140),
 
                       const SizedBox(height: 40),
 
                       const Text(
                         "WELCOME",
-
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
                         ),
                       ),
 
@@ -347,30 +301,21 @@ class _WelcomeViewState extends State<WelcomeView> {
 
                       Text(
                         userText,
-
-                        textAlign: TextAlign.center,
-
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
+                        style: const TextStyle(color: Colors.white70),
                       ),
 
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 30),
 
                       const Text(
                         "¿Quién está viendo?",
-
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                        style: TextStyle(color: Colors.white70),
                       ),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 40),
 
                       Wrap(
                         spacing: 30,
                         runSpacing: 30,
-                        alignment: WrapAlignment.center,
-
                         children: List.generate(
                           profiles.length,
                           (index) => profileCard(index),
@@ -379,45 +324,22 @@ class _WelcomeViewState extends State<WelcomeView> {
 
                       const Spacer(),
 
-                      const Text(
-                        "Mantén presionado un perfil para editar",
-
-                        style: TextStyle(color: Colors.white38, fontSize: 11),
-                      ),
-
-                      const SizedBox(height: 20),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
-
                         child: SizedBox(
                           width: double.infinity,
-
                           child: ElevatedButton(
                             onPressed: logout,
-
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
-
                               foregroundColor: Colors.black,
-
-                              padding: const EdgeInsets.all(16),
-
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
                             ),
-
-                            child: const Text(
-                              "CERRAR SESIÓN",
-
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            child: const Text("CERRAR SESIÓN"),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
                     ],
                   ),
           ),
