@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'home_view.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'home_view.dart';
+import 'catalog_view.dart';
 
 class WelcomeView extends StatefulWidget {
   const WelcomeView({super.key});
@@ -228,6 +229,14 @@ class _WelcomeViewState extends State<WelcomeView> {
 
   Widget profileCard(int index) {
     return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CatalogView(profileImage: profiles[index]["image"]),
+          ),
+        );
+      },
       onLongPress: () {
         editProfile(index);
       },

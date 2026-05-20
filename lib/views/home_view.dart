@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+//import 'catalog_view.dart';
+//import 'upload_movies.dart';
 
 import '../widgets/custom_button.dart';
 import 'login_view.dart';
@@ -98,6 +100,7 @@ class HomeView extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LoginView()),
+                      //MaterialPageRoute(builder: (_) => const UploadMovies()),
                     );
                   },
                 ),
