@@ -245,7 +245,6 @@ class _CatalogViewState extends State<CatalogView> {
                               ),
                             );
                           }
-
                           if (value == "logout") {
                             final navigator = Navigator.of(context);
 
@@ -507,30 +506,128 @@ class _CatalogViewState extends State<CatalogView> {
                                     Positioned(
                                       top: 5,
                                       right: 5,
-                                      child: Column(
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.edit,
-                                              color: Colors.blue,
+                                      child: PopupMenuButton<String>(
+                                        color: Colors.grey[900],
+                                        icon: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.7,
                                             ),
-                                            onPressed: () {
-                                              showMovieDialog(
-                                                id: movie.id,
-                                                data:
-                                                    movie.data()
-                                                        as Map<String, dynamic>,
-                                              );
-                                            },
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
                                           ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4),
+                                            child: Icon(
+                                              Icons.more_vert,
+                                              color: Colors.white,
                                             ),
-                                            onPressed: () {
-                                              deleteMovie(movie.id);
-                                            },
+                                          ),
+                                        ),
+                                        onSelected: (value) async {
+                                          if (value == "edit") {
+                                            showMovieDialog(
+                                              id: movie.id,
+                                              data:
+                                                  movie.data()
+                                                      as Map<String, dynamic>,
+                                            );
+                                          }
+
+                                          if (value == "delete") {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (_) => AlertDialog(
+                                                backgroundColor:
+                                                    Colors.grey[900],
+                                                title: const Text(
+                                                  "Eliminar película",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                content: const Text(
+                                                  "¿Estás seguro de que deseas eliminar esta película?",
+                                                  style: TextStyle(
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                        context,
+                                                        false,
+                                                      );
+                                                    },
+                                                    child: const Text(
+                                                      "Cancelar",
+                                                    ),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style:
+                                                        ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                        ),
+                                                    onPressed: () {
+                                                      Navigator.pop(
+                                                        context,
+                                                        true,
+                                                      );
+                                                    },
+                                                    child: const Text(
+                                                      "Eliminar",
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirm == true) {
+                                              await deleteMovie(movie.id);
+                                            }
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: "edit",
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.edit,
+                                                  color: Colors.blue,
+                                                ),
+                                                SizedBox(width: 10),
+                                                Text(
+                                                  "Editar",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: "delete",
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.delete,
+                                                  color: Colors.red,
+                                                ),
+                                                SizedBox(width: 10),
+                                                Text(
+                                                  "Eliminar",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ],
                                       ),
