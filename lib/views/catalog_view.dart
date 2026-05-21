@@ -20,15 +20,23 @@ class _CatalogViewState extends State<CatalogView> {
   String searchText = "";
 
   // =========================
-  // CRUD FIRESTORE
+  // FIRESTORE
   // =========================
   final CollectionReference moviesRef = FirebaseFirestore.instance.collection(
     'movies',
   );
 
+  // =========================
+  // CONTROLLERS
+  // =========================
   final TextEditingController titleController = TextEditingController();
+
   final TextEditingController genreController = TextEditingController();
+
+  final TextEditingController yearController = TextEditingController();
+
   final TextEditingController imageController = TextEditingController();
+
   final TextEditingController synopsisController = TextEditingController();
 
   // =========================
@@ -36,10 +44,11 @@ class _CatalogViewState extends State<CatalogView> {
   // =========================
   Future<void> addMovie() async {
     await moviesRef.add({
-      "title": titleController.text,
-      "genre": genreController.text,
-      "image": imageController.text,
-      "synopsis": synopsisController.text,
+      "title": titleController.text.trim(),
+      "genre": genreController.text.trim(),
+      "year": yearController.text.trim(),
+      "image": imageController.text.trim(),
+      "synopsis": synopsisController.text.trim(),
     });
   }
 
@@ -48,10 +57,11 @@ class _CatalogViewState extends State<CatalogView> {
   // =========================
   Future<void> updateMovie(String id) async {
     await moviesRef.doc(id).update({
-      "title": titleController.text,
-      "genre": genreController.text,
-      "image": imageController.text,
-      "synopsis": synopsisController.text,
+      "title": titleController.text.trim(),
+      "genre": genreController.text.trim(),
+      "year": yearController.text.trim(),
+      "image": imageController.text.trim(),
+      "synopsis": synopsisController.text.trim(),
     });
   }
 
@@ -62,9 +72,13 @@ class _CatalogViewState extends State<CatalogView> {
     await moviesRef.doc(id).delete();
   }
 
+  // =========================
+  // CLEAR INPUTS
+  // =========================
   void clearControllers() {
     titleController.clear();
     genreController.clear();
+    yearController.clear();
     imageController.clear();
     synopsisController.clear();
   }
@@ -74,42 +88,51 @@ class _CatalogViewState extends State<CatalogView> {
   // =========================
   void showMovieDialog({String? id, Map<String, dynamic>? data}) {
     if (data != null) {
-      titleController.text = data['title'];
-      genreController.text = data['genre'];
-      imageController.text = data['image'];
-      synopsisController.text = data['synopsis'];
+      titleController.text = data['title']?.toString() ?? '';
+      genreController.text = data['genre']?.toString() ?? '';
+      yearController.text = data['year']?.toString() ?? '';
+      imageController.text = data['image']?.toString() ?? '';
+      synopsisController.text = data['synopsis']?.toString() ?? '';
     } else {
       clearControllers();
     }
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
+
         title: Text(
           id == null ? "Agregar película" : "Editar película",
           style: const TextStyle(color: Colors.white),
         ),
+
         content: SingleChildScrollView(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               _input(titleController, "Título"),
               _input(genreController, "Género"),
+              _input(yearController, "Año"),
               _input(imageController, "URL Imagen"),
               _input(synopsisController, "Sinopsis"),
             ],
           ),
         ),
+
         actions: [
           TextButton(
             onPressed: () {
               clearControllers();
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
             },
             child: const Text("Cancelar"),
           ),
+
           ElevatedButton(
             onPressed: () async {
+              final navigator = Navigator.of(dialogContext);
+
               if (id == null) {
                 await addMovie();
               } else {
@@ -118,7 +141,7 @@ class _CatalogViewState extends State<CatalogView> {
 
               if (!mounted) return;
 
-              Navigator.of(context).pop();
+              navigator.pop();
 
               setState(() {});
             },
@@ -129,13 +152,30 @@ class _CatalogViewState extends State<CatalogView> {
     );
   }
 
+  // =========================
+  // INPUT
+  // =========================
   Widget _input(TextEditingController controller, String label) {
-    return TextField(
-      controller: controller,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+
+        style: const TextStyle(color: Colors.white),
+
+        decoration: InputDecoration(
+          labelText: label,
+
+          labelStyle: const TextStyle(color: Colors.white70),
+
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade700),
+          ),
+
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.red),
+          ),
+        ),
       ),
     );
   }
@@ -146,11 +186,13 @@ class _CatalogViewState extends State<CatalogView> {
       backgroundColor: Colors.black,
 
       // =========================
-      // BOTÓN CREATE
+      // BOTÓN AGREGAR
       // =========================
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.red,
-        onPressed: () => showMovieDialog(),
+        onPressed: () {
+          showMovieDialog();
+        },
         child: const Icon(Icons.add),
       ),
 
@@ -159,12 +201,18 @@ class _CatalogViewState extends State<CatalogView> {
           stream: moviesRef.snapshots(),
 
           builder: (context, snapshot) {
+            // =========================
+            // LOADING
+            // =========================
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(color: Colors.red),
               );
             }
 
+            // =========================
+            // EMPTY
+            // =========================
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const Center(
                 child: Text(
@@ -178,24 +226,9 @@ class _CatalogViewState extends State<CatalogView> {
 
             final movies = allMovies.where((movie) {
               final title = movie['title'].toString().toLowerCase();
+
               return title.contains(searchText.toLowerCase());
             }).toList();
-
-            if (movies.isEmpty) {
-              return Column(
-                children: [
-                  _buildAppBar(),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        "No se encontraron películas",
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }
 
             return CustomScrollView(
               slivers: [
@@ -214,6 +247,7 @@ class _CatalogViewState extends State<CatalogView> {
                           Colors.white,
                           BlendMode.difference,
                         ),
+
                         child: Image.asset(
                           'assets/images/logo_nada.jpg',
                           width: 90,
@@ -224,6 +258,9 @@ class _CatalogViewState extends State<CatalogView> {
 
                       const Spacer(),
 
+                      // =========================
+                      // SEARCH
+                      // =========================
                       IconButton(
                         onPressed: () {
                           showSearch(
@@ -231,12 +268,20 @@ class _CatalogViewState extends State<CatalogView> {
                             delegate: MovieSearchDelegate(allMovies: allMovies),
                           );
                         },
+
                         icon: const Icon(Icons.search, color: Colors.white),
                       ),
 
+                      // =========================
+                      // PROFILE MENU
+                      // =========================
                       PopupMenuButton<String>(
                         color: Colors.grey[900],
+
                         onSelected: (value) async {
+                          // =========================
+                          // CHANGE PROFILE
+                          // =========================
                           if (value == "profiles") {
                             Navigator.pushReplacement(
                               context,
@@ -245,6 +290,10 @@ class _CatalogViewState extends State<CatalogView> {
                               ),
                             );
                           }
+
+                          // =========================
+                          // LOGOUT
+                          // =========================
                           if (value == "logout") {
                             final navigator = Navigator.of(context);
 
@@ -260,13 +309,16 @@ class _CatalogViewState extends State<CatalogView> {
                             );
                           }
                         },
+
                         itemBuilder: (context) => [
                           const PopupMenuItem(
                             value: "profiles",
                             child: Row(
                               children: [
                                 Icon(Icons.switch_account, color: Colors.white),
+
                                 SizedBox(width: 10),
+
                                 Text(
                                   "Cambiar perfil",
                                   style: TextStyle(color: Colors.white),
@@ -274,12 +326,15 @@ class _CatalogViewState extends State<CatalogView> {
                               ],
                             ),
                           ),
+
                           const PopupMenuItem(
                             value: "logout",
                             child: Row(
                               children: [
                                 Icon(Icons.logout, color: Colors.red),
+
                                 SizedBox(width: 10),
+
                                 Text(
                                   "Cerrar sesión",
                                   style: TextStyle(color: Colors.red),
@@ -288,11 +343,14 @@ class _CatalogViewState extends State<CatalogView> {
                             ),
                           ),
                         ],
+
                         child: Container(
                           width: 35,
                           height: 35,
+
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
+
                             image: DecorationImage(
                               image: AssetImage(widget.profileImage),
                               fit: BoxFit.cover,
@@ -305,27 +363,26 @@ class _CatalogViewState extends State<CatalogView> {
                 ),
 
                 // =========================
-                // CONTENIDO
+                // CONTENT
                 // =========================
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+
                     children: [
                       // =========================
-                      // BANNER NETFLIX
+                      // BANNER
                       // =========================
                       CarouselSlider.builder(
                         itemCount: movies.length,
+
                         options: CarouselOptions(
                           height: 550,
                           viewportFraction: 1,
                           autoPlay: true,
                           autoPlayInterval: const Duration(seconds: 4),
-                          autoPlayAnimationDuration: const Duration(
-                            milliseconds: 800,
-                          ),
-                          enlargeCenterPage: false,
                         ),
+
                         itemBuilder: (context, index, realIndex) {
                           final movie = movies[index];
 
@@ -334,6 +391,7 @@ class _CatalogViewState extends State<CatalogView> {
                               SizedBox(
                                 width: double.infinity,
                                 height: 550,
+
                                 child: Image.network(
                                   movie['image'],
                                   fit: BoxFit.cover,
@@ -343,12 +401,15 @@ class _CatalogViewState extends State<CatalogView> {
                               Container(
                                 width: double.infinity,
                                 height: 550,
+
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
+
                                     colors: [
                                       Colors.transparent,
+
                                       Colors.black.withValues(alpha: 0.95),
                                     ],
                                   ),
@@ -358,14 +419,18 @@ class _CatalogViewState extends State<CatalogView> {
                               Positioned(
                                 bottom: 40,
                                 left: 20,
+
                                 child: SizedBox(
                                   width: 350,
+
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+
                                     children: [
                                       Text(
                                         movie['title'],
+
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 38,
@@ -376,7 +441,8 @@ class _CatalogViewState extends State<CatalogView> {
                                       const SizedBox(height: 10),
 
                                       Text(
-                                        movie['genre'],
+                                        "${movie['genre']} • ${movie['year']}",
+
                                         style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 16,
@@ -387,57 +453,15 @@ class _CatalogViewState extends State<CatalogView> {
 
                                       Text(
                                         movie['synopsis'],
+
                                         maxLines: 4,
+
                                         overflow: TextOverflow.ellipsis,
+
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                         ),
-                                      ),
-
-                                      const SizedBox(height: 25),
-
-                                      Row(
-                                        children: [
-                                          ElevatedButton.icon(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                              foregroundColor: Colors.black,
-                                            ),
-                                            onPressed: () {},
-                                            icon: const Icon(Icons.play_arrow),
-                                            label: const Text("Ver ahora"),
-                                          ),
-
-                                          const SizedBox(width: 12),
-
-                                          ElevatedButton.icon(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.grey[900],
-                                              foregroundColor: Colors.white,
-                                            ),
-                                            onPressed: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      MovieDetailView(
-                                                        movie:
-                                                            movie.data()
-                                                                as Map<
-                                                                  String,
-                                                                  dynamic
-                                                                >,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                            icon: const Icon(
-                                              Icons.info_outline,
-                                            ),
-                                            label: const Text("Información"),
-                                          ),
-                                        ],
                                       ),
                                     ],
                                   ),
@@ -452,8 +476,10 @@ class _CatalogViewState extends State<CatalogView> {
 
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 15),
+
                         child: Text(
                           "Populares en NADA",
+
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -465,175 +491,214 @@ class _CatalogViewState extends State<CatalogView> {
                       const SizedBox(height: 20),
 
                       // =========================
-                      // LISTA HORIZONTAL
+                      // HORIZONTAL LIST
                       // =========================
                       SizedBox(
                         height: 270,
+
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
+
                           itemCount: movies.length,
+
                           itemBuilder: (context, index) {
                             final movie = movies[index];
 
                             return Padding(
                               padding: const EdgeInsets.only(left: 15),
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MovieDetailView(
-                                        movie:
-                                            movie.data()
-                                                as Map<String, dynamic>,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Stack(
-                                  children: [
-                                    Container(
+
+                              child: Stack(
+                                children: [
+                                  // =========================
+                                  // MOVIE CARD
+                                  // =========================
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(16),
+
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+
+                                        MaterialPageRoute(
+                                          builder: (_) => MovieDetailView(
+                                            movie:
+                                                movie.data()
+                                                    as Map<String, dynamic>,
+                                          ),
+                                        ),
+                                      );
+                                    },
+
+                                    child: Container(
                                       width: 170,
+
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(16),
+
                                         image: DecorationImage(
                                           image: NetworkImage(movie['image']),
+
                                           fit: BoxFit.cover,
                                         ),
                                       ),
                                     ),
+                                  ),
 
-                                    Positioned(
-                                      top: 5,
-                                      right: 5,
-                                      child: PopupMenuButton<String>(
-                                        color: Colors.grey[900],
-                                        icon: Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.7,
+                                  // =========================
+                                  // MENU
+                                  // =========================
+                                  Positioned(
+                                    top: 5,
+                                    right: 5,
+
+                                    child: PopupMenuButton<String>(
+                                      color: Colors.grey[900],
+
+                                      position: PopupMenuPosition.under,
+
+                                      onSelected: (value) async {
+                                        // EDIT
+                                        if (value == "edit") {
+                                          showMovieDialog(
+                                            id: movie.id,
+
+                                            data:
+                                                movie.data()
+                                                    as Map<String, dynamic>,
+                                          );
+                                        }
+
+                                        // DELETE
+                                        if (value == "delete") {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+
+                                            builder: (_) => AlertDialog(
+                                              backgroundColor: Colors.grey[900],
+
+                                              title: const Text(
+                                                "Eliminar película",
+
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+
+                                              content: const Text(
+                                                "¿Deseas eliminar esta película?",
+
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(
+                                                      context,
+                                                      false,
+                                                    );
+                                                  },
+
+                                                  child: const Text("Cancelar"),
+                                                ),
+
+                                                ElevatedButton(
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+
+                                                  onPressed: () {
+                                                    Navigator.pop(
+                                                      context,
+                                                      true,
+                                                    );
+                                                  },
+
+                                                  child: const Text("Eliminar"),
+                                                ),
+                                              ],
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(4),
-                                            child: Icon(
-                                              Icons.more_vert,
-                                              color: Colors.white,
-                                            ),
+                                          );
+
+                                          if (confirm == true) {
+                                            await deleteMovie(movie.id);
+                                          }
+                                        }
+                                      },
+
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: "edit",
+
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.edit,
+                                                color: Colors.blue,
+                                              ),
+
+                                              SizedBox(width: 10),
+
+                                              Text(
+                                                "Editar",
+
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        onSelected: (value) async {
-                                          if (value == "edit") {
-                                            showMovieDialog(
-                                              id: movie.id,
-                                              data:
-                                                  movie.data()
-                                                      as Map<String, dynamic>,
-                                            );
-                                          }
 
-                                          if (value == "delete") {
-                                            final confirm = await showDialog<bool>(
-                                              context: context,
-                                              builder: (_) => AlertDialog(
-                                                backgroundColor:
-                                                    Colors.grey[900],
-                                                title: const Text(
-                                                  "Eliminar película",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                content: const Text(
-                                                  "¿Estás seguro de que deseas eliminar esta película?",
-                                                  style: TextStyle(
-                                                    color: Colors.white70,
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(
-                                                        context,
-                                                        false,
-                                                      );
-                                                    },
-                                                    child: const Text(
-                                                      "Cancelar",
-                                                    ),
-                                                  ),
-                                                  ElevatedButton(
-                                                    style:
-                                                        ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.red,
-                                                        ),
-                                                    onPressed: () {
-                                                      Navigator.pop(
-                                                        context,
-                                                        true,
-                                                      );
-                                                    },
-                                                    child: const Text(
-                                                      "Eliminar",
-                                                    ),
-                                                  ),
-                                                ],
+                                        const PopupMenuItem(
+                                          value: "delete",
+
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
                                               ),
-                                            );
 
-                                            if (confirm == true) {
-                                              await deleteMovie(movie.id);
-                                            }
-                                          }
-                                        },
-                                        itemBuilder: (context) => [
-                                          const PopupMenuItem(
-                                            value: "edit",
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.edit,
-                                                  color: Colors.blue,
+                                              SizedBox(width: 10),
+
+                                              Text(
+                                                "Eliminar",
+
+                                                style: TextStyle(
+                                                  color: Colors.white,
                                                 ),
-                                                SizedBox(width: 10),
-                                                Text(
-                                                  "Editar",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                              ),
+                                            ],
                                           ),
-                                          const PopupMenuItem(
-                                            value: "delete",
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.delete,
-                                                  color: Colors.red,
-                                                ),
-                                                SizedBox(width: 10),
-                                                Text(
-                                                  "Eliminar",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                        ),
+                                      ],
+
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.7,
                                           ),
-                                        ],
+
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                        ),
+
+                                        child: const Icon(
+                                          Icons.more_vert,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             );
                           },
@@ -651,22 +716,11 @@ class _CatalogViewState extends State<CatalogView> {
       ),
     );
   }
-
-  Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      color: Colors.black,
-      child: const Row(
-        children: [
-          Icon(Icons.search, color: Colors.white),
-          SizedBox(width: 10),
-          Text("Buscar", style: TextStyle(color: Colors.white)),
-        ],
-      ),
-    );
-  }
 }
 
+// =========================
+// SEARCH
+// =========================
 class MovieSearchDelegate extends SearchDelegate {
   final List<QueryDocumentSnapshot> allMovies;
 
@@ -691,6 +745,7 @@ class MovieSearchDelegate extends SearchDelegate {
   Widget buildResults(BuildContext context) {
     final results = allMovies.where((movie) {
       final title = movie['title'].toString().toLowerCase();
+
       return title.contains(query.toLowerCase());
     }).toList();
 
@@ -701,6 +756,7 @@ class MovieSearchDelegate extends SearchDelegate {
   Widget buildSuggestions(BuildContext context) {
     final results = allMovies.where((movie) {
       final title = movie['title'].toString().toLowerCase();
+
       return title.contains(query.toLowerCase());
     }).toList();
 
@@ -710,19 +766,29 @@ class MovieSearchDelegate extends SearchDelegate {
   Widget _buildList(List<QueryDocumentSnapshot> movies) {
     return Container(
       color: Colors.black,
+
       child: ListView.builder(
         itemCount: movies.length,
+
         itemBuilder: (context, index) {
           final movie = movies[index];
 
           return ListTile(
-            leading: Image.network(movie['image'], width: 50),
+            leading: Image.network(
+              movie['image'],
+              width: 50,
+              fit: BoxFit.cover,
+            ),
+
             title: Text(
               movie['title'],
+
               style: const TextStyle(color: Colors.white),
             ),
+
             subtitle: Text(
-              movie['genre'],
+              "${movie['genre']} • ${movie['year']}",
+
               style: const TextStyle(color: Colors.white70),
             ),
           );
