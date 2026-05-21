@@ -19,9 +19,6 @@ class CatalogView extends StatefulWidget {
 class _CatalogViewState extends State<CatalogView> {
   String searchText = "";
 
-  // =========================
-  // FIRESTORE
-  // =========================
   final CollectionReference moviesRef = FirebaseFirestore.instance.collection(
     'movies',
   );
@@ -35,9 +32,6 @@ class _CatalogViewState extends State<CatalogView> {
   final TextEditingController imageController = TextEditingController();
   final TextEditingController synopsisController = TextEditingController();
 
-  // =========================
-  // CREATE
-  // =========================
   Future<void> addMovie() async {
     await moviesRef.add({
       "title": titleController.text.trim(),
@@ -48,9 +42,6 @@ class _CatalogViewState extends State<CatalogView> {
     });
   }
 
-  // =========================
-  // UPDATE
-  // =========================
   Future<void> updateMovie(String id) async {
     await moviesRef.doc(id).update({
       "title": titleController.text.trim(),
@@ -61,16 +52,10 @@ class _CatalogViewState extends State<CatalogView> {
     });
   }
 
-  // =========================
-  // DELETE
-  // =========================
   Future<void> deleteMovie(String id) async {
     await moviesRef.doc(id).delete();
   }
 
-  // =========================
-  // CLEAR INPUTS
-  // =========================
   void clearControllers() {
     titleController.clear();
     genreController.clear();
@@ -79,9 +64,6 @@ class _CatalogViewState extends State<CatalogView> {
     synopsisController.clear();
   }
 
-  // =========================
-  // DIALOG CRUD (Contenido y Estilizado)
-  // =========================
   void showMovieDialog({String? id, Map<String, dynamic>? data}) {
     if (data != null) {
       titleController.text = data['title']?.toString() ?? '';
@@ -174,9 +156,6 @@ class _CatalogViewState extends State<CatalogView> {
     );
   }
 
-  // =========================
-  // INPUT (Con bordes redondeados suaves)
-  // =========================
   Widget _input(TextEditingController controller, String hint) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -284,7 +263,7 @@ class _CatalogViewState extends State<CatalogView> {
                                 ),
                                 child: Image.asset(
                                   'assets/images/logo_nada.jpg',
-                                  width: 95,
+                                  width: 120,
                                   height: 40,
                                   fit: BoxFit.contain,
                                 ),
@@ -755,9 +734,6 @@ class _CatalogViewState extends State<CatalogView> {
   }
 }
 
-// =========================
-// SEARCH DELEGATE
-// =========================
 class MovieSearchDelegate extends SearchDelegate {
   final List<QueryDocumentSnapshot> allMovies;
 

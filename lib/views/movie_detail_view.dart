@@ -13,9 +13,6 @@ class MovieDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =======================
-            // PORTADA
-            // =======================
             Stack(
               children: [
                 SizedBox(
@@ -53,9 +50,6 @@ class MovieDetailView extends StatelessWidget {
               ],
             ),
 
-            // =======================
-            // INFO
-            // =======================
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
