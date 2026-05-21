@@ -77,6 +77,7 @@ class _WelcomeViewState extends State<WelcomeView> {
   /// =========================
   Future<void> saveProfiles() async {
     final user = _auth.currentUser;
+
     if (user == null) return;
 
     try {
@@ -90,7 +91,7 @@ class _WelcomeViewState extends State<WelcomeView> {
   }
 
   /// =========================
-  /// LOGOUT
+  /// CERRAR SESIÓN
   /// =========================
   Future<void> logout() async {
     await _auth.signOut();
@@ -114,54 +115,62 @@ class _WelcomeViewState extends State<WelcomeView> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.grey[900],
+
         title: const Text(
           "Editar Perfil",
           style: TextStyle(color: Colors.white),
         ),
 
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "Nuevo nombre",
-                hintStyle: const TextStyle(color: Colors.white54),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade700),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                style: const TextStyle(color: Colors.white),
+
+                decoration: InputDecoration(
+                  hintText: "Nuevo nombre",
+                  hintStyle: const TextStyle(color: Colors.white54),
+
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey.shade700),
+                  ),
+
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            const Text(
-              "Selecciona una imagen",
-              style: TextStyle(color: Colors.white70),
-            ),
+              const Text(
+                "Selecciona una imagen",
+                style: TextStyle(color: Colors.white70),
+              ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                selectImage(index, "assets/images/profile1.jpg"),
-                selectImage(index, "assets/images/profile2.jpg"),
-                selectImage(index, "assets/images/profile3.jpg"),
-                selectImage(index, "assets/images/profile4.jpg"),
-              ],
-            ),
-          ],
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  selectImage(index, "assets/images/profile1.jpg"),
+                  selectImage(index, "assets/images/profile2.jpg"),
+                  selectImage(index, "assets/images/profile3.jpg"),
+                  selectImage(index, "assets/images/profile4.jpg"),
+                ],
+              ),
+            ],
+          ),
         ),
 
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+            },
             child: const Text("Cancelar"),
           ),
 
@@ -200,60 +209,67 @@ class _WelcomeViewState extends State<WelcomeView> {
           profiles[index]["image"] = imagePath;
         });
       },
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white24),
-          image: DecorationImage(
-            image: AssetImage(imagePath),
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
+
+      child: CircleAvatar(radius: 32, backgroundImage: AssetImage(imagePath)),
     );
   }
 
   /// =========================
-  /// CARD PERFIL
+  /// PERFIL
   /// =========================
   Widget profileCard(int index) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => CatalogView(profileImage: profiles[index]["image"]),
-          ),
-        );
-      },
-      onLongPress: () => editProfile(index),
+    return Tooltip(
+      message: "Mantén presionada la imagen para editar",
+      textStyle: const TextStyle(color: Colors.white, fontSize: 13),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(10),
+      ),
 
-      child: Column(
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: AssetImage(profiles[index]["image"]),
-                fit: BoxFit.cover,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  CatalogView(profileImage: profiles[index]["image"]),
+            ),
+          );
+        },
+
+        onLongPress: () => editProfile(index),
+
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+
+          child: Row(
+            children: [
+              // =========================
+              // FOTO REDONDA
+              // =========================
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: AssetImage(profiles[index]["image"]),
               ),
-            ),
-          ),
 
-          const SizedBox(height: 10),
+              const SizedBox(width: 20),
 
-          Text(
-            profiles[index]["name"],
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+              // =========================
+              // NOMBRE
+              // =========================
+              Expanded(
+                child: Text(
+                  profiles[index]["name"],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -271,6 +287,7 @@ class _WelcomeViewState extends State<WelcomeView> {
           child: Container(
             width: 390,
             height: 844,
+
             decoration: BoxDecoration(
               color: Colors.black,
               borderRadius: BorderRadius.circular(40),
@@ -280,67 +297,94 @@ class _WelcomeViewState extends State<WelcomeView> {
                 ? const Center(
                     child: CircularProgressIndicator(color: Colors.white),
                   )
-                : Column(
-                    children: [
-                      const SizedBox(height: 40),
+                : SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 40),
 
-                      Image.asset('assets/images/logo_nada.jpg', width: 140),
-
-                      const SizedBox(height: 40),
-
-                      const Text(
-                        "WELCOME",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        userText,
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      const Text(
-                        "¿Quién está viendo?",
-                        style: TextStyle(color: Colors.white70),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      Wrap(
-                        spacing: 30,
-                        runSpacing: 30,
-                        children: List.generate(
-                          profiles.length,
-                          (index) => profileCard(index),
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: logout,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                            ),
-                            child: const Text("CERRAR SESIÓN"),
+                        /// =========================
+                        /// LOGO INVERTIDO
+                        /// =========================
+                        ColorFiltered(
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.difference,
+                          ),
+                          child: Image.asset(
+                            'assets/images/logo_nada.jpg',
+                            width: 150,
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
-                    ],
+                        const SizedBox(height: 40),
+
+                        const Text(
+                          "WELCOME",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Text(
+                          userText,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+
+                        const SizedBox(height: 35),
+
+                        const Text(
+                          "¿Quién está viendo?",
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        Column(
+                          children: List.generate(
+                            profiles.length,
+                            (index) => profileCard(index),
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        /// =========================
+                        /// BOTÓN CERRAR SESIÓN
+                        /// =========================
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 30),
+
+                          child: SizedBox(
+                            width: double.infinity,
+
+                            child: ElevatedButton.icon(
+                              onPressed: logout,
+
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+
+                              icon: const Icon(Icons.logout),
+
+                              label: const Text(
+                                "CERRAR SESIÓN",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
           ),
         ),
