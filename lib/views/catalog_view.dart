@@ -30,13 +30,9 @@ class _CatalogViewState extends State<CatalogView> {
   // CONTROLLERS
   // =========================
   final TextEditingController titleController = TextEditingController();
-
   final TextEditingController genreController = TextEditingController();
-
   final TextEditingController yearController = TextEditingController();
-
   final TextEditingController imageController = TextEditingController();
-
   final TextEditingController synopsisController = TextEditingController();
 
   // =========================
@@ -84,7 +80,7 @@ class _CatalogViewState extends State<CatalogView> {
   }
 
   // =========================
-  // DIALOG CRUD
+  // DIALOG CRUD (Contenido y Estilizado)
   // =========================
   void showMovieDialog({String? id, Map<String, dynamic>? data}) {
     if (data != null) {
@@ -101,37 +97,52 @@ class _CatalogViewState extends State<CatalogView> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
-
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         title: Text(
-          id == null ? "Agregar película" : "Editar película",
-          style: const TextStyle(color: Colors.white),
-        ),
-
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _input(titleController, "Título"),
-              _input(genreController, "Género"),
-              _input(yearController, "Año"),
-              _input(imageController, "URL Imagen"),
-              _input(synopsisController, "Sinopsis"),
-            ],
+          id == null ? "Agregar película" : "Editar Película",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
-
+        content: SizedBox(
+          width:
+              320, // Ajustado para mantenerse armónico dentro del contenedor base
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _input(titleController, "Título"),
+                _input(genreController, "Género"),
+                _input(yearController, "Año"),
+                _input(imageController, "URL Imagen"),
+                _input(synopsisController, "Sinopsis"),
+              ],
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
               clearControllers();
               Navigator.pop(dialogContext);
             },
-            child: const Text("Cancelar"),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
-
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             onPressed: () async {
-              final navigator = Navigator.of(dialogContext);
+              final dialogNavigator = Navigator.of(dialogContext);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
 
               if (id == null) {
                 await addMovie();
@@ -141,11 +152,22 @@ class _CatalogViewState extends State<CatalogView> {
 
               if (!mounted) return;
 
-              navigator.pop();
+              dialogNavigator.pop();
+
+              scaffoldMessenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    id == null ? "Película agregada" : "Perfil actualizado",
+                  ),
+                ),
+              );
 
               setState(() {});
             },
-            child: const Text("Guardar"),
+            child: const Text(
+              "Guardar",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -153,27 +175,26 @@ class _CatalogViewState extends State<CatalogView> {
   }
 
   // =========================
-  // INPUT
+  // INPUT (Con bordes redondeados suaves)
   // =========================
-  Widget _input(TextEditingController controller, String label) {
+  Widget _input(TextEditingController controller, String hint) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: controller,
-
         style: const TextStyle(color: Colors.white),
-
         decoration: InputDecoration(
-          labelText: label,
-
-          labelStyle: const TextStyle(color: Colors.white70),
-
+          hintText: hint,
+          hintStyle: const TextStyle(color: Colors.white54),
+          filled: true,
+          fillColor: Colors.black26,
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey.shade700),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade800),
           ),
-
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.red),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.white70),
           ),
         ),
       ),
@@ -183,535 +204,551 @@ class _CatalogViewState extends State<CatalogView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-
-      // =========================
-      // BOTÓN AGREGAR
-      // =========================
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.red,
-        onPressed: () {
-          showMovieDialog();
-        },
-        child: const Icon(Icons.add),
-      ),
+      backgroundColor: Colors.grey[900],
 
       body: SafeArea(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: moviesRef.snapshots(),
+        child: Center(
+          child: Container(
+            width: 390,
+            height: 844,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(40),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: moviesRef.snapshots(),
+                builder: (context, snapshot) {
+                  // Loading
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  }
 
-          builder: (context, snapshot) {
-            // =========================
-            // LOADING
-            // =========================
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.red),
-              );
-            }
-
-            // =========================
-            // EMPTY
-            // =========================
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return const Center(
-                child: Text(
-                  "No hay películas",
-                  style: TextStyle(color: Colors.white),
-                ),
-              );
-            }
-
-            final allMovies = snapshot.data!.docs;
-
-            final movies = allMovies.where((movie) {
-              final title = movie['title'].toString().toLowerCase();
-
-              return title.contains(searchText.toLowerCase());
-            }).toList();
-
-            return CustomScrollView(
-              slivers: [
-                // =========================
-                // APPBAR
-                // =========================
-                SliverAppBar(
-                  backgroundColor: Colors.black,
-                  pinned: true,
-                  floating: true,
-
-                  title: Row(
-                    children: [
-                      ColorFiltered(
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.difference,
-                        ),
-
-                        child: Image.asset(
-                          'assets/images/logo_nada.jpg',
-                          width: 90,
-                          height: 40,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // =========================
-                      // SEARCH
-                      // =========================
-                      IconButton(
-                        onPressed: () {
-                          showSearch(
-                            context: context,
-                            delegate: MovieSearchDelegate(allMovies: allMovies),
-                          );
-                        },
-
-                        icon: const Icon(Icons.search, color: Colors.white),
-                      ),
-
-                      // =========================
-                      // PROFILE MENU
-                      // =========================
-                      PopupMenuButton<String>(
-                        color: Colors.grey[900],
-
-                        onSelected: (value) async {
-                          // =========================
-                          // CHANGE PROFILE
-                          // =========================
-                          if (value == "profiles") {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const WelcomeView(),
-                              ),
-                            );
-                          }
-
-                          // =========================
-                          // LOGOUT
-                          // =========================
-                          if (value == "logout") {
-                            final navigator = Navigator.of(context);
-
-                            await FirebaseAuth.instance.signOut();
-
-                            if (!mounted) return;
-
-                            navigator.pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (_) => const HomeView(),
-                              ),
-                              (route) => false,
-                            );
-                          }
-                        },
-
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: "profiles",
-                            child: Row(
-                              children: [
-                                Icon(Icons.switch_account, color: Colors.white),
-
-                                SizedBox(width: 10),
-
-                                Text(
-                                  "Cambiar perfil",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const PopupMenuItem(
-                            value: "logout",
-                            child: Row(
-                              children: [
-                                Icon(Icons.logout, color: Colors.red),
-
-                                SizedBox(width: 10),
-
-                                Text(
-                                  "Cerrar sesión",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ],
+                  // Empty
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Scaffold(
+                      backgroundColor: Colors.black,
+                      appBar: AppBar(
+                        backgroundColor: Colors.black,
+                        elevation: 0,
+                        actions: [
+                          IconButton(
+                            onPressed: () => showMovieDialog(),
+                            icon: const Icon(
+                              Icons.add_circle_outline,
+                              color: Colors.white,
+                              size: 26,
                             ),
                           ),
                         ],
-
-                        child: Container(
-                          width: 35,
-                          height: 35,
-
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-
-                            image: DecorationImage(
-                              image: AssetImage(widget.profileImage),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                      ),
+                      body: const Center(
+                        child: Text(
+                          "No hay películas",
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    );
+                  }
 
-                // =========================
-                // CONTENT
-                // =========================
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  final allMovies = snapshot.data!.docs;
+                  final movies = allMovies.where((movie) {
+                    final title = movie['title'].toString().toLowerCase();
+                    return title.contains(searchText.toLowerCase());
+                  }).toList();
 
-                    children: [
-                      // =========================
-                      // BANNER
-                      // =========================
-                      CarouselSlider.builder(
-                        itemCount: movies.length,
-
-                        options: CarouselOptions(
-                          height: 550,
-                          viewportFraction: 1,
-                          autoPlay: true,
-                          autoPlayInterval: const Duration(seconds: 4),
-                        ),
-
-                        itemBuilder: (context, index, realIndex) {
-                          final movie = movies[index];
-
-                          return Stack(
+                  return CustomScrollView(
+                    slivers: [
+                      // AppBar principal rediseñada dentro del contenedor
+                      SliverAppBar(
+                        backgroundColor: Colors.black,
+                        primary: false,
+                        pinned: true,
+                        floating: true,
+                        elevation: 0,
+                        title: Padding(
+                          padding: const EdgeInsets.only(
+                            top: 16,
+                            left: 4,
+                            right: 4,
+                          ),
+                          child: Row(
                             children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 550,
+                              ColorFiltered(
+                                colorFilter: const ColorFilter.mode(
+                                  Colors.white,
+                                  BlendMode.difference,
+                                ),
+                                child: Image.asset(
+                                  'assets/images/logo_nada.jpg',
+                                  width: 95,
+                                  height: 40,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const Spacer(),
 
-                                child: Image.network(
-                                  movie['image'],
-                                  fit: BoxFit.cover,
+                              // Search
+                              IconButton(
+                                onPressed: () {
+                                  showSearch(
+                                    context: context,
+                                    delegate: MovieSearchDelegate(
+                                      allMovies: allMovies,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.search,
+                                  color: Colors.white,
                                 ),
                               ),
 
-                              Container(
-                                width: double.infinity,
-                                height: 550,
+                              // Agregar Película
+                              IconButton(
+                                onPressed: () {
+                                  showMovieDialog();
+                                },
+                                icon: const Icon(
+                                  Icons.add_circle_outline,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
 
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
+                              // Profile Menu
+                              PopupMenuButton<String>(
+                                color: Colors.grey[900],
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                onSelected: (value) async {
+                                  if (value == "profiles") {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const WelcomeView(),
+                                      ),
+                                    );
+                                  }
 
-                                    colors: [
-                                      Colors.transparent,
-
-                                      Colors.black.withValues(alpha: 0.95),
-                                    ],
+                                  if (value == "logout") {
+                                    final navigator = Navigator.of(context);
+                                    await FirebaseAuth.instance.signOut();
+                                    if (!mounted) return;
+                                    navigator.pushAndRemoveUntil(
+                                      MaterialPageRoute(
+                                        builder: (_) => const HomeView(),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: "profiles",
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.switch_account,
+                                          color: Colors.white,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          "Cambiar perfil",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ),
-
-                              Positioned(
-                                bottom: 40,
-                                left: 20,
-
-                                child: SizedBox(
-                                  width: 350,
-
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-
-                                    children: [
-                                      Text(
-                                        movie['title'],
-
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 38,
-                                          fontWeight: FontWeight.bold,
+                                  const PopupMenuItem(
+                                    value: "logout",
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.logout, color: Colors.red),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          "Cerrar sesión",
+                                          style: TextStyle(color: Colors.red),
                                         ),
-                                      ),
-
-                                      const SizedBox(height: 10),
-
-                                      Text(
-                                        "${movie['genre']} • ${movie['year']}",
-
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 20),
-
-                                      Text(
-                                        movie['synopsis'],
-
-                                        maxLines: 4,
-
-                                        overflow: TextOverflow.ellipsis,
-
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundImage: AssetImage(
+                                    widget.profileImage,
                                   ),
                                 ),
                               ),
                             ],
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 15),
-
-                        child: Text(
-                          "Populares en NADA",
-
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      // Listado de Contenido
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 20),
 
-                      // =========================
-                      // HORIZONTAL LIST
-                      // =========================
-                      SizedBox(
-                        height: 270,
+                            // Carousel Slider con Esquinas Completamente Redondeadas
+                            CarouselSlider.builder(
+                              itemCount: movies.length,
+                              options: CarouselOptions(
+                                height:
+                                    430, // Reducido ligeramente para un ajuste óptimo en el contenedor vertical
+                                viewportFraction: 0.88,
+                                enlargeCenterPage: true,
+                                autoPlay: true,
+                                autoPlayInterval: const Duration(seconds: 5),
+                              ),
+                              itemBuilder: (context, index, realIndex) {
+                                final movie = movies[index];
 
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-
-                          itemCount: movies.length,
-
-                          itemBuilder: (context, index) {
-                            final movie = movies[index];
-
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 15),
-
-                              child: Stack(
-                                children: [
-                                  // =========================
-                                  // MOVIE CARD
-                                  // =========================
-                                  InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-
-                                        MaterialPageRoute(
-                                          builder: (_) => MovieDetailView(
-                                            movie:
-                                                movie.data()
-                                                    as Map<String, dynamic>,
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      30,
+                                    ), // Fuerza el redondeado en la imagen de red
+                                    child: Stack(
+                                      children: [
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          child: Image.network(
+                                            movie['image'],
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    Container(
+                                                      color: Colors.grey[800],
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                        color: Colors.white38,
+                                                        size: 40,
+                                                      ),
+                                                    ),
                                           ),
                                         ),
-                                      );
-                                    },
-
-                                    child: Container(
-                                      width: 170,
-
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(16),
-
-                                        image: DecorationImage(
-                                          image: NetworkImage(movie['image']),
-
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  // =========================
-                                  // MENU
-                                  // =========================
-                                  Positioned(
-                                    top: 5,
-                                    right: 5,
-
-                                    child: PopupMenuButton<String>(
-                                      color: Colors.grey[900],
-
-                                      position: PopupMenuPosition.under,
-
-                                      onSelected: (value) async {
-                                        // EDIT
-                                        if (value == "edit") {
-                                          showMovieDialog(
-                                            id: movie.id,
-
-                                            data:
-                                                movie.data()
-                                                    as Map<String, dynamic>,
-                                          );
-                                        }
-
-                                        // DELETE
-                                        if (value == "delete") {
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-
-                                            builder: (_) => AlertDialog(
-                                              backgroundColor: Colors.grey[900],
-
-                                              title: const Text(
-                                                "Eliminar película",
-
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-
-                                              content: const Text(
-                                                "¿Deseas eliminar esta película?",
-
-                                                style: TextStyle(
-                                                  color: Colors.white70,
-                                                ),
-                                              ),
-
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(
-                                                      context,
-                                                      false,
-                                                    );
-                                                  },
-
-                                                  child: const Text("Cancelar"),
-                                                ),
-
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
-
-                                                  onPressed: () {
-                                                    Navigator.pop(
-                                                      context,
-                                                      true,
-                                                    );
-                                                  },
-
-                                                  child: const Text("Eliminar"),
+                                        Container(
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.transparent,
+                                                Colors.black.withValues(
+                                                  alpha: 0.95,
                                                 ),
                                               ],
                                             ),
-                                          );
-
-                                          if (confirm == true) {
-                                            await deleteMovie(movie.id);
-                                          }
-                                        }
-                                      },
-
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: "edit",
-
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.edit,
-                                                color: Colors.blue,
-                                              ),
-
-                                              SizedBox(width: 10),
-
-                                              Text(
-                                                "Editar",
-
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
                                           ),
                                         ),
-
-                                        const PopupMenuItem(
-                                          value: "delete",
-
-                                          child: Row(
+                                        Positioned(
+                                          bottom: 24,
+                                          left: 20,
+                                          right: 20,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Icon(
-                                                Icons.delete,
-                                                color: Colors.red,
-                                              ),
-
-                                              SizedBox(width: 10),
-
                                               Text(
-                                                "Eliminar",
-
-                                                style: TextStyle(
+                                                movie['title'],
+                                                style: const TextStyle(
                                                   color: Colors.white,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                "${movie['genre']}  •  ${movie['year']}",
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                movie['synopsis'],
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  color: Colors.white60,
+                                                  fontSize: 12,
+                                                  height: 1.3,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
                                       ],
-
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.7,
-                                          ),
-
-                                          borderRadius: BorderRadius.circular(
-                                            30,
-                                          ),
-                                        ),
-
-                                        child: const Icon(
-                                          Icons.more_vert,
-                                          color: Colors.white,
-                                        ),
-                                      ),
                                     ),
                                   ),
-                                ],
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 25),
+
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 25),
+                              child: Text(
+                                "Populares en NADA",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            );
-                          },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Lista Horizontal Redondeada
+                            SizedBox(
+                              height: 220,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: movies.length,
+                                itemBuilder: (context, index) {
+                                  final movie = movies[index];
+                                  final movieData =
+                                      movie.data() as Map<String, dynamic>;
+
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      left: 25,
+                                      right: index == movies.length - 1
+                                          ? 25
+                                          : 0,
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => MovieDetailView(
+                                                  movie: movieData,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Container(
+                                            width: 140,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(22),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.4),
+                                                  blurRadius: 10,
+                                                  offset: const Offset(0, 5),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(
+                                                22,
+                                              ), // Esquinas redondeadas para las portadas inferiores
+                                              child: Image.network(
+                                                movie['image'],
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) => Container(
+                                                      color: Colors.grey[800],
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                        color: Colors.white30,
+                                                      ),
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Acciones CRUD flotantes sobre la tarjeta
+                                        Positioned(
+                                          top: 10,
+                                          right: 10,
+                                          child: PopupMenuButton<String>(
+                                            color: Colors.grey[900],
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            position: PopupMenuPosition.under,
+                                            onSelected: (value) async {
+                                              if (value == "edit") {
+                                                showMovieDialog(
+                                                  id: movie.id,
+                                                  data: movieData,
+                                                );
+                                              }
+
+                                              if (value == "delete") {
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (_) => AlertDialog(
+                                                    backgroundColor:
+                                                        Colors.grey[900],
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            22,
+                                                          ),
+                                                    ),
+                                                    title: const Text(
+                                                      "Eliminar película",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    content: const Text(
+                                                      "¿Deseas eliminar esta película?",
+                                                      style: TextStyle(
+                                                        color: Colors.white70,
+                                                      ),
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              context,
+                                                              false,
+                                                            ),
+                                                        child: const Text(
+                                                          "Cancelar",
+                                                        ),
+                                                      ),
+                                                      ElevatedButton(
+                                                        style:
+                                                            ElevatedButton.styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.red,
+                                                            ),
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              context,
+                                                              true,
+                                                            ),
+                                                        child: const Text(
+                                                          "Eliminar",
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+
+                                                if (confirm == true) {
+                                                  await deleteMovie(movie.id);
+                                                }
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              const PopupMenuItem(
+                                                value: "edit",
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.edit,
+                                                      color: Colors.blue,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Text(
+                                                      "Editar",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: "delete",
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      color: Colors.red,
+                                                    ),
+                                                    SizedBox(width: 10),
+                                                    Text(
+                                                      "Eliminar",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.6,
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.more_vert,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                          ],
                         ),
                       ),
-
-                      const SizedBox(height: 40),
                     ],
-                  ),
-                ),
-              ],
-            );
-          },
+                  );
+                },
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -719,7 +756,7 @@ class _CatalogViewState extends State<CatalogView> {
 }
 
 // =========================
-// SEARCH
+// SEARCH DELEGATE
 // =========================
 class MovieSearchDelegate extends SearchDelegate {
   final List<QueryDocumentSnapshot> allMovies;
@@ -727,16 +764,31 @@ class MovieSearchDelegate extends SearchDelegate {
   MovieSearchDelegate({required this.allMovies});
 
   @override
+  ThemeData appBarTheme(BuildContext context) {
+    return ThemeData(
+      scaffoldBackgroundColor: Colors.black,
+      inputDecorationTheme: const InputDecorationTheme(
+        hintStyle: TextStyle(color: Colors.white54),
+        border: InputBorder.none,
+      ),
+      appBarTheme: AppBarTheme(backgroundColor: Colors.grey[900], elevation: 0),
+    );
+  }
+
+  @override
   List<Widget>? buildActions(BuildContext context) {
     return [
-      IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ""),
+      IconButton(
+        icon: const Icon(Icons.clear, color: Colors.white),
+        onPressed: () => query = "",
+      ),
     ];
   }
 
   @override
   Widget? buildLeading(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back, color: Colors.white),
       onPressed: () => close(context, null),
     );
   }
@@ -745,51 +797,82 @@ class MovieSearchDelegate extends SearchDelegate {
   Widget buildResults(BuildContext context) {
     final results = allMovies.where((movie) {
       final title = movie['title'].toString().toLowerCase();
-
       return title.contains(query.toLowerCase());
     }).toList();
 
-    return _buildList(results);
+    return _buildList(context, results);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
     final results = allMovies.where((movie) {
       final title = movie['title'].toString().toLowerCase();
-
       return title.contains(query.toLowerCase());
     }).toList();
 
-    return _buildList(results);
+    return _buildList(context, results);
   }
 
-  Widget _buildList(List<QueryDocumentSnapshot> movies) {
+  Widget _buildList(BuildContext context, List<QueryDocumentSnapshot> movies) {
     return Container(
       color: Colors.black,
-
       child: ListView.builder(
         itemCount: movies.length,
-
         itemBuilder: (context, index) {
           final movie = movies[index];
 
-          return ListTile(
-            leading: Image.network(
-              movie['image'],
-              width: 50,
-              fit: BoxFit.cover,
-            ),
-
-            title: Text(
-              movie['title'],
-
-              style: const TextStyle(color: Colors.white),
-            ),
-
-            subtitle: Text(
-              "${movie['genre']} • ${movie['year']}",
-
-              style: const TextStyle(color: Colors.white70),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1C1E),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    movie['image'],
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 50,
+                      height: 50,
+                      color: Colors.grey[800],
+                      child: const Icon(
+                        Icons.broken_image,
+                        color: Colors.white30,
+                      ),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  movie['title'],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  "${movie['genre']} • ${movie['year']}",
+                  style: const TextStyle(color: Colors.white54),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MovieDetailView(
+                        movie: movie.data() as Map<String, dynamic>,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           );
         },
