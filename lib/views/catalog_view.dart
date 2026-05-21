@@ -2,6 +2,8 @@ import 'movie_detail_view.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+
 import 'home_view.dart';
 import 'welcome_view.dart';
 
@@ -29,7 +31,9 @@ class _CatalogViewState extends State<CatalogView> {
   final TextEditingController imageController = TextEditingController();
   final TextEditingController synopsisController = TextEditingController();
 
+  // =========================
   // CREATE
+  // =========================
   Future<void> addMovie() async {
     await moviesRef.add({
       "title": titleController.text,
@@ -39,7 +43,9 @@ class _CatalogViewState extends State<CatalogView> {
     });
   }
 
+  // =========================
   // UPDATE
+  // =========================
   Future<void> updateMovie(String id) async {
     await moviesRef.doc(id).update({
       "title": titleController.text,
@@ -49,7 +55,9 @@ class _CatalogViewState extends State<CatalogView> {
     });
   }
 
+  // =========================
   // DELETE
+  // =========================
   Future<void> deleteMovie(String id) async {
     await moviesRef.doc(id).delete();
   }
@@ -108,7 +116,10 @@ class _CatalogViewState extends State<CatalogView> {
                 await updateMovie(id);
               }
 
-              Navigator.pop(context);
+              if (!mounted) return;
+
+              Navigator.of(context).pop();
+
               setState(() {});
             },
             child: const Text("Guardar"),
@@ -188,6 +199,9 @@ class _CatalogViewState extends State<CatalogView> {
 
             return CustomScrollView(
               slivers: [
+                // =========================
+                // APPBAR
+                // =========================
                 SliverAppBar(
                   backgroundColor: Colors.black,
                   pinned: true,
@@ -233,12 +247,13 @@ class _CatalogViewState extends State<CatalogView> {
                           }
 
                           if (value == "logout") {
+                            final navigator = Navigator.of(context);
+
                             await FirebaseAuth.instance.signOut();
 
-                            if (!context.mounted) return;
+                            if (!mounted) return;
 
-                            Navigator.pushAndRemoveUntil(
-                              context,
+                            navigator.pushAndRemoveUntil(
                               MaterialPageRoute(
                                 builder: (_) => const HomeView(),
                               ),
@@ -290,106 +305,148 @@ class _CatalogViewState extends State<CatalogView> {
                   ),
                 ),
 
+                // =========================
+                // CONTENIDO
+                // =========================
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Stack(
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            height: 550,
-                            child: Image.network(
-                              movies[0]['image'],
-                              fit: BoxFit.cover,
-                            ),
+                      // =========================
+                      // BANNER NETFLIX
+                      // =========================
+                      CarouselSlider.builder(
+                        itemCount: movies.length,
+                        options: CarouselOptions(
+                          height: 550,
+                          viewportFraction: 1,
+                          autoPlay: true,
+                          autoPlayInterval: const Duration(seconds: 4),
+                          autoPlayAnimationDuration: const Duration(
+                            milliseconds: 800,
                           ),
-                          Container(
-                            width: double.infinity,
-                            height: 550,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.95),
-                                ],
+                          enlargeCenterPage: false,
+                        ),
+                        itemBuilder: (context, index, realIndex) {
+                          final movie = movies[index];
+
+                          return Stack(
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                height: 550,
+                                child: Image.network(
+                                  movie['image'],
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 40,
-                            left: 20,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  movies[0]['title'],
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 38,
-                                    fontWeight: FontWeight.bold,
+
+                              Container(
+                                width: double.infinity,
+                                height: 550,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.95),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  movies[0]['genre'],
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                SizedBox(
-                                  width: 320,
-                                  child: Text(
-                                    movies[0]['synopsis'],
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 25),
-                                Row(
-                                  children: [
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black,
+                              ),
+
+                              Positioned(
+                                bottom: 40,
+                                left: 20,
+                                child: SizedBox(
+                                  width: 350,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        movie['title'],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 38,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                      onPressed: () {},
-                                      icon: const Icon(Icons.play_arrow),
-                                      label: const Text("Ver ahora"),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[900],
-                                        foregroundColor: Colors.white,
+
+                                      const SizedBox(height: 10),
+
+                                      Text(
+                                        movie['genre'],
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => MovieDetailView(
-                                              movie:
-                                                  movies[0].data()
-                                                      as Map<String, dynamic>,
+
+                                      const SizedBox(height: 20),
+
+                                      Text(
+                                        movie['synopsis'],
+                                        maxLines: 4,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 25),
+
+                                      Row(
+                                        children: [
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                              foregroundColor: Colors.black,
                                             ),
+                                            onPressed: () {},
+                                            icon: const Icon(Icons.play_arrow),
+                                            label: const Text("Ver ahora"),
                                           ),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.info_outline),
-                                      label: const Text("Información"),
-                                    ),
-                                  ],
+
+                                          const SizedBox(width: 12),
+
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.grey[900],
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      MovieDetailView(
+                                                        movie:
+                                                            movie.data()
+                                                                as Map<
+                                                                  String,
+                                                                  dynamic
+                                                                >,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.info_outline,
+                                            ),
+                                            label: const Text("Información"),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 30),
@@ -408,6 +465,9 @@ class _CatalogViewState extends State<CatalogView> {
 
                       const SizedBox(height: 20),
 
+                      // =========================
+                      // LISTA HORIZONTAL
+                      // =========================
                       SizedBox(
                         height: 270,
                         child: ListView.builder(
@@ -444,7 +504,6 @@ class _CatalogViewState extends State<CatalogView> {
                                       ),
                                     ),
 
-                                    // 🔥 CRUD botones
                                     Positioned(
                                       top: 5,
                                       right: 5,
